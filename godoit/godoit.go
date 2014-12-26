@@ -36,7 +36,7 @@ func listItems() []entry {
 	return itemList
 }
 
-func createItem(state string, name string) {
+func CreateItem(state string, name string) {
 
 	datetime := time.Now()
 	Year, Month, Day := datetime.Date()
@@ -51,7 +51,7 @@ func createItem(state string, name string) {
 
 }
 
-func deleteItem(id int) {
+func DeleteItem(id int) {
 
 	itemList := listItems()
 
@@ -74,10 +74,6 @@ func markItemAs(id int, state string) {
 	itemList := listItems()
 
 	itemList[id] = entry{id, state, itemList[id].created, itemList[id].name}
-
-}
-
-func Initialize() {
 
 }
 

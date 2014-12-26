@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/timosis/GoDoItServer/godoit"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -12,7 +13,8 @@ import (
 const helpstring string = `
 List of commands : 
 HELP : get this list of commands 
-QUIT : save changes and close connection 
+QUIT : save changes and close connection
+PASS <password> : get access to the useful commands below
 RETR : retrieve everything 
 DELE N : Delete entry N  
 ADD TODO name : add something to do at some point in time 
@@ -49,7 +51,7 @@ func main() {
 
 func handleConnection(conn net.Conn) {
 
-	conn.Write([]byte("Welcome to GoDoIt Server 1.0 ! What do you want ? (type HELP to see a list of available commands)"))
+	conn.Write([]byte("Welcome to GoDoIt Server 1.0 ! What do you want ? (type HELP to see a list of available commands)\n"))
 
 	time.Sleep(time.Second)
 
@@ -73,9 +75,9 @@ func handleConnection(conn net.Conn) {
 			conn.Write([]byte(helpstring))
 
 		} else if strings.HasPrefix(s, "QUIT") {
-			conn.Write([]byte("KTHXBYE"))
+			conn.Write([]byte("KTHXBYE\n"))
 			conn.Close()
-			fmt.Println("Client ended connection with QUIT.")
+			fmt.Println("Client ended connection with QUIT.\n")
 			break
 		} else if strings.HasPrefix(s, "RETR") {
 
@@ -85,28 +87,57 @@ func handleConnection(conn net.Conn) {
 				conn.Write([]byte(reponse))
 
 			} else {
-				conn.Write([]byte("You must type PASS your_password_here first !"))
+				conn.Write([]byte("You must type PASS your_password_here first !\n"))
 			}
 
 		} else if strings.HasPrefix(s, "PASS") {
 
-			if strings.Trim(strings.Split(s, " ")[1], " \n"+string(0)) == pass {
-				auth = true
-				conn.Write([]byte("K Authentification Successful. You can do stuff now ! \n"))
+			stuff = strings.Split(s, " ")
+			if len(stuff) == 2 {
+
+				if strings.Trim(stuff[1], " \n"+string(0)) == pass {
+					auth = true
+					conn.Write([]byte("K Authentification Successful. You can do stuff now ! \n"))
+				} else {
+					conn.Write([]byte("NOPE Wrong Password !\n"))
+				}
 			} else {
-				conn.Write([]byte("NOPE Wrong Password !"))
+
+				conn.Write([]byte("usage : PASS <password> \n"))
 			}
+
 		} else if strings.HasPrefix(s, "DELE") {
 
+			stuff = strings.Split(s, " ")
+			if len(stuff) == 2 {
+				godoit.DeleteItem(strconv.Atoi(stuff[1]))
+				conn.Write([]byte("OK Item Successfully Deleted\n"))
+			} else {
+				conn.Write([]byte("NOPE Usage : DELE N where N is an integer\n"))
+			}
+		} else if strings.HasPrefix(s, "") == "ADD" {
+			stuff = strings.Split(s, " ")
+
+			if len(stuff) > 2 {
+
+				if stuff[1] == "TODO" {
+					godoit.CreateItem("TODO", strings.Join(stuff[2:len(stuff)]))
+				} else if stuff[1] == "DOIT" {
+					godoit.CreateItem("DOIT", strings.Join(stuff[2:len(stuff)]))
+				} else if stuff[1] == "DONE" {
+					godoit.CreateItem("DONE", strings.Join(stuff[2:len(stuff)]))
+				} else {
+					conn.Write([]byte("NOPE this command doesn't exist ... \n"))
+				}
+
+			} else {
+				conn.Write([]byte("NOPE Usage : ADD <state> <name> \n"))
+			}
 		} else {
 
-			conn.Write([]byte("This option is not implemented yet (or you typed random shit, whatever)"))
+			conn.Write([]byte("NOPE :This option is not implemented yet (or you typed random shit, whatever) \n"))
 		}
 
 	}
 
-}
-
-func stripAnswer([]byte) string {
-	return "bite"
 }
