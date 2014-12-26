@@ -40,11 +40,11 @@ func CreateItem(state string, name string) {
 
 	datetime := time.Now()
 	Year, Month, Day := datetime.Date()
-	date := strings.Join([]string{string(Day), string(Month), string(Year)}, " ")
+	date := strings.Join([]string{strconv.Itoa(Day), strconv.Itoa(int(Month)), strconv.Itoa(Year)}, " ")
 
 	var listItem []entry
 	listItem = listItems()
-	I := entry{len(listItem), state, date, name}
+	I := entry{len(listItem) + 1, state, date, name}
 	listItem = append(listItem, I)
 
 	writeFile(listItem)
@@ -69,11 +69,13 @@ func DeleteItem(id int) {
 
 }
 
-func markItemAs(id int, state string) {
+func MarkItemAs(id int, state string) {
 
 	itemList := listItems()
 
-	itemList[id] = entry{id, state, itemList[id].created, itemList[id].name}
+	itemList[id-1] = entry{id, state, itemList[id].created, itemList[id].name}
+
+	writeFile(itemList)
 
 }
 
@@ -92,11 +94,11 @@ func stringFromItems(itemList []entry, sep string) string {
 	var lines []string
 
 	for _, elem := range itemList {
-		s = strings.Join([]string{string(elem.id), elem.state, elem.created, elem.name}, sep)
+		s = strings.Join([]string{strconv.Itoa(elem.id), elem.state, elem.created, elem.name}, sep)
 		lines = append(lines, s)
 	}
 
-	return strings.Join(lines, "\n")
+	return strings.Join(lines, "\n") + "\n"
 
 }
 

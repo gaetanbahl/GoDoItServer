@@ -20,9 +20,9 @@ DELE N : Delete entry N
 ADD TODO name : add something to do at some point in time 
 ADD DOIT name : add something to do like right now 
 ADD DONE name : add something that is already done (why the fuck would you want to do that) 
-TODO N : mark N as TODO 
-DOIT N : mark N as DOIT
-DONE N : mark N as DONE 
+MARK TODO N : mark N as TODO 
+MARK DOIT N : mark N as DOIT
+MARK DONE N : mark N as DONE 
 `
 
 var pass string = "test"
@@ -82,7 +82,7 @@ func handleConnection(conn net.Conn) {
 		} else if strings.HasPrefix(s, "RETR") {
 
 			if auth {
-				reponse := godoit.Retrieve() + "\n"
+				reponse := godoit.Retrieve()
 				fmt.Println(reponse)
 				conn.Write([]byte(reponse))
 
@@ -92,7 +92,7 @@ func handleConnection(conn net.Conn) {
 
 		} else if strings.HasPrefix(s, "PASS") {
 
-			stuff = strings.Split(s, " ")
+			stuff := strings.Split(s, " ")
 			if len(stuff) == 2 {
 
 				if strings.Trim(stuff[1], " \n"+string(0)) == pass {
@@ -108,24 +108,25 @@ func handleConnection(conn net.Conn) {
 
 		} else if strings.HasPrefix(s, "DELE") {
 
-			stuff = strings.Split(s, " ")
+			stuff := strings.Split(s, " ")
 			if len(stuff) == 2 {
-				godoit.DeleteItem(strconv.Atoi(stuff[1]))
+				id, _ := strconv.Atoi(stuff[1])
+				godoit.DeleteItem(id)
 				conn.Write([]byte("OK Item Successfully Deleted\n"))
 			} else {
 				conn.Write([]byte("NOPE Usage : DELE N where N is an integer\n"))
 			}
-		} else if strings.HasPrefix(s, "") == "ADD" {
-			stuff = strings.Split(s, " ")
+		} else if strings.HasPrefix(s, "ADD") {
+			stuff := strings.Split(s, " ")
 
 			if len(stuff) > 2 {
 
 				if stuff[1] == "TODO" {
-					godoit.CreateItem("TODO", strings.Join(stuff[2:len(stuff)]))
+					godoit.CreateItem("TODO", strings.Join(stuff[2:len(stuff)], " "))
 				} else if stuff[1] == "DOIT" {
-					godoit.CreateItem("DOIT", strings.Join(stuff[2:len(stuff)]))
+					godoit.CreateItem("DOIT", strings.Join(stuff[2:len(stuff)], " "))
 				} else if stuff[1] == "DONE" {
-					godoit.CreateItem("DONE", strings.Join(stuff[2:len(stuff)]))
+					godoit.CreateItem("DONE", strings.Join(stuff[2:len(stuff)], " "))
 				} else {
 					conn.Write([]byte("NOPE this command doesn't exist ... \n"))
 				}
@@ -133,11 +134,34 @@ func handleConnection(conn net.Conn) {
 			} else {
 				conn.Write([]byte("NOPE Usage : ADD <state> <name> \n"))
 			}
+		} else if strings.HasPrefix(s, "MARK") {
+			stuff := strings.Split(s, " ")
+
+			if len(stuff) > 2 {
+
+				id, err := strconv.Atoi(stuff[2])
+				if err == nil {
+					if stuff[1] == "TODO" {
+						godoit.MarkItemAs(id, "TODO")
+					} else if stuff[1] == "DOIT" {
+						godoit.MarkItemAs(id, "DOIT")
+					} else if stuff[1] == "DONE" {
+						godoit.MarkItemAs(id, "DONE")
+					} else {
+						conn.Write([]byte("NOPE this command doesn't exist ... \n"))
+					}
+
+				} else {
+					conn.Write([]byte("NOPE Usage : MARK <state> <name> \n"))
+				}
+
+			} else {
+				conn.Write([]byte("NOPE Usage : MARK <state> <name> \n"))
+			}
+
 		} else {
 
 			conn.Write([]byte("NOPE :This option is not implemented yet (or you typed random shit, whatever) \n"))
 		}
-
 	}
-
 }
